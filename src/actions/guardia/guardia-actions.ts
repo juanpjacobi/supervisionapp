@@ -92,6 +92,8 @@ export const crearGuardia = async (data: {
           nombre: parsedData.nombre,
           apellido: parsedData.apellido,
           telefono: parsedData.telefono,
+          numero: parseInt(parsedData.numero, 10),
+
           dni: parsedData.dni,
           direccionId: direccion.id,
         },
