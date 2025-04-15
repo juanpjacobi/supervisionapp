@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Rol {
+  id        Int    @id @default(autoincrement())
+  nombreRol String
+  User      User[]
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  activo   Boolean @default(true)
+  password String
+  nombre   String
+  rol      Rol     @relation(fields: [rolId], references: [id])
+
+  rolId    Int
+  HojaRuta HojaRuta[]
+}
+
+model Ciudad {
+  id           Int         @id @default(autoincrement())
+  nombreCiudad String
+  Localidad    Localidad[]
+}
+
+model Localidad {
+  id              Int      @id @default(autoincrement())
+  nombreLocalidad String
+  ciudad          Ciudad   @relation(fields: [ciudadId], references: [id])
+  ciudadId        Int
+  Barrio          Barrio[]
+}
+
+model Barrio {
+  id           Int         @id @default(autoincrement())
+  nombreBarrio String
+  localidad    Localidad   @relation(fields: [localidadId], references: [id])
+  localidadId  Int
+  Direccion    Direccion[]
+}
+
+model Direccion {
+  id             Int              @id @default(autoincrement())
+  calle          String
+  numero         String
+  barrio         Barrio           @relation(fields: [barrioId], references: [id])
+  barrioId       Int
+  Administracion Administracion[]
+  Edificio       Edificio[]
+  Guardia        Guardia[]
+}
+
+model Administracion {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  email       String     @unique
+  telefono    String
+  activo      Boolean    @default(true)
+  direccion   Direccion  @relation(fields: [direccionId], references: [id])
+  direccionId Int
+  Edificio    Edificio[]
+}
+
+model Edificio {
+  id               Int                @id @default(autoincrement())
+  nombre           String
+  activo           Boolean            @default(true)
+  direccion        Direccion          @relation(fields: [direccionId], references: [id])
+  direccionId      Int
+  administracion   Administracion     @relation(fields: [administracionId], references: [id])
+  administracionId Int
+  LineaHojaRuta    LineaHojaRuta[]
+  DetalleEdificio  DetalleEdificio?
+  Novedad          Novedad[]
+  TareasPeriodicas TareasPeriodicas[]
+}
+
+model Guardia {
+  id       Int     @id @default(autoincrement())
+  nombre   String
+  apellido String
+  numero   Int     @unique
+  dni      String
+  telefono String
+  activo   Boolean @default(true)
+
+  direccion        Direccion          @relation(fields: [direccionId], references: [id])
+  direccionId      Int
+  HojaRuta         HojaRuta[]
+  LineaHojaRuta    LineaHojaRuta[]
+  Novedad          Novedad[]
+  TareasPeriodicas TareasPeriodicas[]
+}
+
+model Prioridad {
+  id            Int             @id @default(autoincrement())
+  nombre        String
+  LineaHojaRuta LineaHojaRuta[]
+}
+
+model TipoLineaHojaRuta {
+  id               Int                @id @default(autoincrement())
+  nombre           String
+  LineaHojaRuta    LineaHojaRuta[]
+  TareasPeriodicas TareasPeriodicas[]
+}
+
+model LineaHojaRuta {
+  id          Int               @id @default(autoincrement())
+  completada  Boolean           @default(false)
+  descripcion String
+  hora        String?
+  edificio    Edificio?         @relation(fields: [edificioId], references: [id])
+  guardia     Guardia?          @relation(fields: [guardiaId], references: [id])
+  prioridad   Prioridad         @relation(fields: [prioridadId], references: [id])
+  hojaRuta    HojaRuta          @relation(fields: [hojaRutaId], references: [id])
+  tipo        TipoLineaHojaRuta @relation(fields: [tipoId], references: [id])
+  tipoId      Int
+  prioridadId Int
+  hojaRutaId  Int
+  edificioId  Int
+  guardiaId   Int
+}
+
+model HojaRuta {
+  id            Int             @id @default(autoincrement())
+  fecha         DateTime
+  LineaHojaRuta LineaHojaRuta[]
+  supervisor    Guardia         @relation(fields: [supervisorId], references: [id])
+  supervisorId  Int
+  creador       User            @relation(fields: [creadorId], references: [id])
+  creadorId     Int
+  Novedad       Novedad[]
+}
+
+model Service {
+  id            Int               @id @default(autoincrement())
+  nombreService String
+  descripcion   String?
+  telefono      String?
+  email         String?
+  detalles      DetalleEdificio[] @relation("DetalleEdificioServices")
+}
+
+model DetalleEdificio {
+  id                Int                 @id @default(autoincrement())
+  modalidadServicio String?
+  llaves            String?
+  banio             String?
+  sotano            String?
+  tableros          String?
+  bombas            String?
+  sisterna          String?
+  terraza           String?
+  cochera           String?
+  anotaciones       String?
+  alarma            String?
+  services          Service[]           @relation("DetalleEdificioServices")
+  edificio          Edificio            @relation(fields: [edificioId], references: [id])
+  edificioId        Int                 @unique
+  directivas        DirectivaEdificio[]
+}
+
+model DirectivaEdificio {
+  id        Int    @id @default(autoincrement())
+  contenido String
+
+  detalleEdificio   DetalleEdificio @relation(fields: [detalleEdificioId], references: [id])
+  detalleEdificioId Int
+}
+
+model Novedad {
+  id          Int       @id @default(autoincrement())
+  descripcion String
+  hora        String?
+  edificio    Edificio? @relation(fields: [edificioId], references: [id])
+  guardia     Guardia?  @relation(fields: [guardiaId], references: [id])
+  hojaRuta    HojaRuta  @relation(fields: [hojaRutaId], references: [id])
+
+  edificioId Int
+  guardiaId  Int
+  hojaRutaId Int
+}
+
+model TareasPeriodicas {
+  id          Int               @id @default(autoincrement())
+  descripcion String
+  edificio    Edificio?         @relation(fields: [edificioId], references: [id])
+  guardia     Guardia?          @relation(fields: [guardiaId], references: [id])
+  tipo        TipoLineaHojaRuta @relation(fields: [tipoId], references: [id])
+  tipoId      Int
+  edificioId  Int
+  guardiaId   Int
+}
